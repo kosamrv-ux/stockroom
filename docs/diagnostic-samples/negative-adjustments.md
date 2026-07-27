@@ -12,6 +12,8 @@ instead of recording an on-hand balance of 6.
 The defect is tracked in
 [`stockroom#1`](https://github.com/kosamrv-ux/stockroom/issues/1), including the baseline commit,
 minimal reproduction, impact, root cause, fix plan, and acceptance checks.
+The reviewed repair is in
+[`stockroom#2`](https://github.com/kosamrv-ux/stockroom/pull/2).
 
 ## Root cause
 
