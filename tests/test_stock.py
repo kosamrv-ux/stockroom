@@ -1,3 +1,6 @@
+import pytest
+
+
 def _move(client, product_id, kind, qty, note=None):
     return client.post(
         f"/products/{product_id}/movements",
@@ -30,6 +33,42 @@ def test_adjustment_recorded_as_signed(client, product):
     _move(client, product["id"], "RECEIPT", 50)
     _move(client, product["id"], "ADJUSTMENT", 5, note="found extra in bay 3")
     assert client.get(f"/products/{product['id']}").json()["on_hand"] == 55
+
+
+def test_negative_adjustment_decreases_on_hand(client, product):
+    _move(client, product["id"], "RECEIPT", 10)
+
+    response = _move(client, product["id"], "ADJUSTMENT", -4, note="cycle-count correction")
+
+    assert response.status_code == 201
+    assert response.json()["quantity"] == -4
+    assert client.get(f"/products/{product['id']}").json()["on_hand"] == 6
+
+
+def test_negative_adjustment_cannot_reduce_stock_below_zero(client, product):
+    _move(client, product["id"], "RECEIPT", 3)
+
+    response = _move(client, product["id"], "ADJUSTMENT", -4)
+
+    assert response.status_code == 422
+    assert "negative" in response.json()["detail"].lower()
+    assert client.get(f"/products/{product['id']}").json()["on_hand"] == 3
+
+
+@pytest.mark.parametrize(
+    ("kind", "quantity"),
+    [
+        ("RECEIPT", 0),
+        ("RECEIPT", -1),
+        ("SHIPMENT", 0),
+        ("SHIPMENT", -1),
+        ("ADJUSTMENT", 0),
+    ],
+)
+def test_invalid_movement_quantity_is_rejected(client, product, kind, quantity):
+    response = _move(client, product["id"], kind, quantity)
+
+    assert response.status_code == 422
 
 
 def test_low_stock_report(client):

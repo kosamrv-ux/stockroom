@@ -20,6 +20,12 @@ means:
 - Business rules (e.g. "never let stock go negative") are enforced in one place,
   [`app/services.py`](app/services.py).
 
+## Diagnostic case study
+
+The [negative-adjustment self-audit](docs/diagnostic-samples/negative-adjustments.md) shows a
+reproducible API-contract defect, its root cause, impact, fix plan, and verification evidence. It is
+a public technical-diagnosis sample, not a client-work claim.
+
 ## Project layout
 
 ```
@@ -84,6 +90,14 @@ curl -X POST http://127.0.0.1:8000/products \
 | `POST`   | `/products/{id}/movements`          | Record a movement 🔒               |
 
 🔒 = requires `X-API-Key`.
+
+### Movement quantities
+
+- `RECEIPT` and `SHIPMENT` use a positive magnitude. The service stores shipments as a negative
+  ledger delta.
+- `ADJUSTMENT` uses a signed, non-zero delta: positive for found stock and negative for breakage,
+  shrinkage, or a downward cycle-count correction.
+- No movement may reduce on-hand stock below zero.
 
 ## Development
 
