@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .models import MovementKind
 
@@ -59,8 +60,22 @@ class ProductWithStock(ProductRead):
 # --- Stock movements ---
 class MovementCreate(BaseModel):
     kind: MovementKind
-    quantity: int = Field(gt=0, description="Magnitude of the movement; sign is derived from kind")
+    quantity: int = Field(
+        description=(
+            "Positive magnitude for receipts and shipments; "
+            "signed non-zero delta for adjustments"
+        )
+    )
     note: str | None = Field(default=None, max_length=280)
+
+    @model_validator(mode="after")
+    def validate_quantity_direction(self) -> Self:
+        if self.kind == MovementKind.ADJUSTMENT:
+            if self.quantity == 0:
+                raise ValueError("Adjustment quantity must be non-zero")
+        elif self.quantity <= 0:
+            raise ValueError("Receipt and shipment quantities must be positive")
+        return self
 
 
 class MovementRead(BaseModel):

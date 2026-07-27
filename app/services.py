@@ -23,10 +23,10 @@ def on_hand(db: Session, product_id: int) -> int:
 
 
 def signed_delta(kind: models.MovementKind, quantity: int) -> int:
-    """Translate a (kind, magnitude) pair into a signed change in on-hand stock."""
+    """Translate a validated movement into a signed change in on-hand stock."""
     if kind == models.MovementKind.SHIPMENT:
         return -quantity
-    # RECEIPT and positive ADJUSTMENT both increase stock.
+    # Adjustments are already signed; receipts are validated as positive.
     return quantity
 
 
